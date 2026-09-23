@@ -2383,7 +2383,7 @@ route(/^\/ingredients$/, (m, q) => {
   cols.push({ key: 'stock', label: 'Stock', num: true, render: (i) => (i.stock == null ? '—' : qtyFmt(i.stock, i.baseUnit)) }, { key: 'st', label: 'Status', sortVal: (i) => (i.stock != null && i.reorderPoint != null ? i.stock / i.reorderPoint : 9), render: stockPill },
     { key: 'used', label: 'Used in', num: true, sortVal: (i) => ingUsedIn(i.id).length, render: (i) => fnum(ingUsedIn(i.id).length) });
   const opt = (a, v) => a.map(([k, l]) => '<option value="' + esc(k) + '"' + (v === k ? ' selected' : '') + '>' + esc(l) + '</option>').join('');
-  return head('Ingredients', 'Master list with supplier pricing, stock and full price history.', (can('editMaster') ? '<button class="btn" data-act="export-csv" data-what="ingredients">' + icon('down') + 'CSV</button><button class="btn pri" data-act="new-ing">' + icon('plus') + 'New ingredient</button>' : '<button class="btn" data-act="export-csv" data-what="ingredients">' + icon('down') + 'CSV</button>'), [['Ingredients']]) +
+  return head('Ingredients', 'Master list with supplier pricing, stock and full price history.', (can('editMaster') ? '<button class="btn" data-act="export-csv" data-what="ingredients">' + icon('down') + 'CSV</button><button class="btn" data-act="add-library">' + icon('plus') + 'Add bakery items</button><button class="btn pri" data-act="new-ing">' + icon('plus') + 'New ingredient</button>' : '<button class="btn" data-act="export-csv" data-what="ingredients">' + icon('down') + 'CSV</button>'), [['Ingredients']]) +
     '<div class="filters"><input class="in" type="search" placeholder="Search ingredient, SKU or supplier" aria-label="Search ingredients" value="' + esc(f.iSearch || '') + '" data-oninput="filterDeb" data-k="iSearch">' +
     '<select class="in" data-on="filter" data-k="iCat" aria-label="Category"><option value="">All categories</option>' + opt(S.settings.ingredientCategories.map((x) => [x, x]), f.iCat) + '</select>' +
     '<select class="in" data-on="filter" data-k="iSup" aria-label="Supplier"><option value="">All suppliers</option>' + opt(S.suppliers.map((x) => [x.id, x.company]), f.iSup) + '</select>' +
@@ -2540,13 +2540,13 @@ route(/^\/packaging$/, () => {
   let rows = S.packaging.filter((x) => (f.kInactive ? true : x.active));
   if (s) rows = rows.filter((x) => (x.name + ' ' + x.sku + ' ' + x.type).toLowerCase().includes(s));
   const seePrice = costFull() || can('editPrices');
-  return head('Packaging', 'Boxes, pouches, labels and inserts, costed per sellable unit.', can('editMaster') ? '<button class="btn pri" data-act="new-pkg">' + icon('plus') + 'New item</button>' : '', [['Packaging']]) +
+  return head('Packaging', 'Boxes, pouches, labels and inserts, costed per sellable unit.', can('editMaster') ? '<button class="btn" data-act="add-library">' + icon('plus') + 'Add bakery items</button><button class="btn pri" data-act="new-pkg">' + icon('plus') + 'New item</button>' : '', [['Packaging']]) +
     '<div class="filters"><input class="in" type="search" placeholder="Search packaging" aria-label="Search packaging" value="' + esc(f.kSearch || '') + '" data-oninput="filterDeb" data-k="kSearch"><label class="check small"><input type="checkbox" data-on="filter" data-k="kInactive"' + (f.kInactive ? ' checked' : '') + '> Show inactive</label></div>' +
     '<div class="card">' + table([{ key: 'name', label: 'Item', render: (x) => '<b>' + esc(x.name) + '</b>' + demoTag(x) + (x.active ? '' : ' ' + pill('INACTIVE', 'Inactive')) + '<div class="tiny faint">' + esc(x.sku || '') + '</div>' }, { key: 'type', label: 'Type' }, { key: 'supplierId', label: 'Supplier', render: (x) => esc(supName(x.supplierId)) }].concat(seePrice ? [{ key: 'pack', label: 'Current price', num: true, render: (x) => packLabel(E.priceAt(x)) }, { key: 'uc', label: 'Per piece', num: true, sortVal: (x) => E.costPerBase(x), render: (x) => money4(E.costPerBase(x)) }] : []).concat([{ key: 'stock', label: 'Stock', num: true, render: (x) => fnum(x.stock) }, { key: 'moq', label: 'MOQ', num: true, render: (x) => fnum(x.moq) }, { key: 'used', label: 'Used in', num: true, render: (x) => fnum(pkgUsedIn(x.id).length) }]), rows, { sort: 'pkg', href: (x) => '#/packaging/' + x.id, emptyTitle: 'No packaging items' }) + '</div>';
 });
 function pkgForm(x) {
   const isNew = !x;
-  const fields = [{ key: 'name', label: 'Name', required: true }, { key: 'sku', label: 'SKU' }, { key: 'type', label: 'Type', type: 'select', options: ['Box', 'Bag', 'Insert', 'Label', 'Sticker', 'Ribbon', 'Card', 'Tissue', 'Other'] }, { key: 'supplierId', label: 'Supplier', type: 'select', options: S.suppliers.map((s) => [s.id, s.company]) }, { key: 'moq', label: 'Minimum order quantity', type: 'number', min: 0 }, { key: 'storage', label: 'Storage' }, { key: 'reorderPoint', label: 'Reorder point (pcs)', type: 'number', min: 0 }];
+  const fields = [{ key: 'name', label: 'Name', required: true }, { key: 'sku', label: 'SKU' }, { key: 'type', label: 'Type', type: 'select', options: ['Box', 'Tin', 'Jar', 'Bag', 'Board', 'Cup / liner', 'Insert', 'Label', 'Sticker', 'Ribbon', 'Card', 'Tissue', 'Wrap', 'Accessory', 'Other'] }, { key: 'supplierId', label: 'Supplier', type: 'select', options: S.suppliers.map((s) => [s.id, s.company]) }, { key: 'moq', label: 'Minimum order quantity', type: 'number', min: 0 }, { key: 'storage', label: 'Storage' }, { key: 'reorderPoint', label: 'Reorder point (pcs)', type: 'number', min: 0 }];
   if (isNew) fields.push({ key: 'price', label: 'Pack price', type: 'number', min: 0, required: true }, { key: 'packSize', label: 'Pieces per pack', type: 'number', gt: 0, required: true }, { key: 'stock', label: 'Opening stock (pcs)', type: 'number', min: 0 });
   formModal({ title: isNew ? 'New packaging item' : 'Edit ' + x.name, wide: true, values: x || { type: 'Box' }, fields,
     onSubmit: (v) => { const now = new Date().toISOString();
@@ -3310,6 +3310,227 @@ ACT['clear-catalog'] = () => {
     audit('Settings', 'catalogue', 'DELETE', 'Deleted all products and recipes (' + counts.products + ' products, ' + counts.recipes + ' recipe versions, ' + counts.batches + ' batches, ' + counts.plans + ' plans)', { counts });
     if (S.mode === 'local') saveLocalSoon();
     closeModal(m, true); toast('All products and recipes deleted'); go('#/products');
+  };
+};
+/* ===================== BAKELY BPOS — standard bakery library (India, INR) =====================
+   Indicative 2026 wholesale prices for a starting point. Each row:
+   [name, category, baseUnit, packSize, packUnit, packPrice ₹, allergens, storage, shelfLifeDays, extra]
+   extra: { f: 1 } marks a flour (used for baker's %), { gpu: n } grams per piece.            */
+const LIB_INGREDIENTS = [
+  // Flours & grains
+  ['Maida (all-purpose flour)', 'Flour', 'g', 25, 'kg', 1050, ['Gluten'], 'Ambient, dry', 180, { f: 1 }],
+  ['Bread flour (high protein)', 'Flour', 'g', 25, 'kg', 1350, ['Gluten'], 'Ambient, dry', 180, { f: 1 }],
+  ['Cake flour (low protein)', 'Flour', 'g', 10, 'kg', 650, ['Gluten'], 'Ambient, dry', 180, { f: 1 }],
+  ['Whole wheat flour (atta)', 'Flour', 'g', 10, 'kg', 480, ['Gluten'], 'Ambient, dry', 90, { f: 1 }],
+  ['Gram flour (besan)', 'Flour', 'g', 5, 'kg', 450, [], 'Ambient, dry', 120, { f: 1 }],
+  ['Almond flour', 'Flour', 'g', 1, 'kg', 1100, ['Tree nuts'], 'Cool, sealed', 120, { f: 1 }],
+  ['Rice flour', 'Flour', 'g', 5, 'kg', 300, [], 'Ambient, dry', 180, { f: 1 }],
+  ['Ragi flour', 'Flour', 'g', 5, 'kg', 400, [], 'Ambient, dry', 90, { f: 1 }],
+  ['Oat flour', 'Flour', 'g', 1, 'kg', 200, ['Gluten'], 'Ambient, dry', 120, { f: 1 }],
+  ['Multigrain flour', 'Flour', 'g', 5, 'kg', 450, ['Gluten'], 'Ambient, dry', 90, { f: 1 }],
+  ['Semolina (sooji / rava)', 'Grains', 'g', 5, 'kg', 250, ['Gluten'], 'Ambient, dry', 180],
+  ['Cornflour (corn starch)', 'Flour', 'g', 5, 'kg', 300, [], 'Ambient, dry', 365],
+  ['Rolled oats', 'Grains', 'g', 5, 'kg', 650, ['Gluten'], 'Ambient, dry', 270],
+  ['Cornflakes', 'Grains', 'g', 1, 'kg', 350, ['Gluten'], 'Ambient, sealed', 180],
+  ['Digestive biscuits (for bases)', 'Grains', 'g', 1, 'kg', 220, ['Gluten', 'Milk'], 'Ambient, sealed', 180],
+  // Sugars & sweeteners
+  ['Granulated sugar', 'Sugar', 'g', 50, 'kg', 2300, [], 'Ambient, sealed', 730],
+  ['Caster sugar', 'Sugar', 'g', 25, 'kg', 1400, [], 'Ambient, sealed', 730],
+  ['Icing sugar (powdered)', 'Sugar', 'g', 5, 'kg', 450, [], 'Ambient, sealed', 365],
+  ['Light brown sugar', 'Sugar', 'g', 5, 'kg', 450, [], 'Ambient, sealed', 365],
+  ['Dark brown sugar', 'Sugar', 'g', 5, 'kg', 500, [], 'Ambient, sealed', 365],
+  ['Demerara sugar', 'Sugar', 'g', 1, 'kg', 180, [], 'Ambient, sealed', 365],
+  ['Jaggery powder', 'Sugar', 'g', 5, 'kg', 450, [], 'Ambient, sealed', 180],
+  ['Honey', 'Sugar', 'g', 1, 'kg', 450, [], 'Ambient', 540],
+  ['Liquid glucose', 'Sugar', 'g', 5, 'kg', 450, [], 'Ambient', 365],
+  ['Golden syrup', 'Sugar', 'g', 1, 'kg', 550, [], 'Ambient', 365],
+  ['Invert sugar syrup', 'Sugar', 'g', 5, 'kg', 500, [], 'Ambient', 270],
+  ['Maple syrup', 'Sugar', 'ml', 1, 'l', 1800, [], 'Ambient; chill after opening', 365],
+  // Fats & oils
+  ['Unsalted butter', 'Fats & Oils', 'g', 500, 'g', 285, ['Milk'], 'Chilled 2–5°C', 120],
+  ['Salted butter', 'Fats & Oils', 'g', 500, 'g', 280, ['Milk'], 'Chilled 2–5°C', 120],
+  ['Ghee', 'Fats & Oils', 'g', 1, 'kg', 650, ['Milk'], 'Ambient, sealed', 270],
+  ['Bakery shortening (vanaspati)', 'Fats & Oils', 'g', 15, 'kg', 2400, [], 'Ambient, cool', 270],
+  ['Bakery margarine', 'Fats & Oils', 'g', 15, 'kg', 2550, ['Milk'], 'Cool 10–20°C', 180],
+  ['Refined sunflower oil', 'Fats & Oils', 'ml', 15, 'l', 2300, [], 'Ambient, dark', 270],
+  ['Coconut oil', 'Fats & Oils', 'ml', 1, 'l', 350, [], 'Ambient', 365],
+  ['Release spray / tin oil', 'Fats & Oils', 'ml', 500, 'ml', 450, [], 'Ambient', 540],
+  // Dairy
+  ['Full-cream milk', 'Dairy', 'ml', 1, 'l', 68, ['Milk'], 'Chilled 2–5°C', 3],
+  ['Skimmed milk powder', 'Dairy', 'g', 1, 'kg', 400, ['Milk'], 'Ambient, sealed', 365],
+  ['Sweetened condensed milk', 'Dairy', 'g', 400, 'g', 140, ['Milk'], 'Ambient; chill after opening', 270],
+  ['Fresh cream (25%)', 'Dairy', 'ml', 1, 'l', 230, ['Milk'], 'Chilled 2–5°C', 7],
+  ['Dairy whipping cream (35%)', 'Dairy', 'ml', 1, 'l', 450, ['Milk'], 'Chilled 2–5°C', 10],
+  ['Non-dairy whipping cream', 'Dairy', 'ml', 1, 'l', 240, [], 'Frozen; thaw chilled', 270],
+  ['Cream cheese', 'Dairy', 'g', 1, 'kg', 900, ['Milk'], 'Chilled 2–5°C', 30],
+  ['Mascarpone', 'Dairy', 'g', 500, 'g', 650, ['Milk'], 'Chilled 2–5°C', 21],
+  ['Curd / plain yogurt', 'Dairy', 'g', 1, 'kg', 90, ['Milk'], 'Chilled 2–5°C', 5],
+  ['Buttermilk', 'Dairy', 'ml', 1, 'l', 40, ['Milk'], 'Chilled 2–5°C', 4],
+  // Eggs & egg alternatives
+  ['Eggs (large)', 'Eggs', 'pc', 30, 'pc', 210, ['Egg'], 'Chilled 2–5°C', 21, { gpu: 50 }],
+  ['Egg replacer powder (eggless)', 'Eggs', 'g', 1, 'kg', 600, [], 'Ambient, dry', 270],
+  ['Eggless cake premix (vanilla)', 'Eggs', 'g', 5, 'kg', 900, ['Gluten', 'Milk'], 'Ambient, dry', 180],
+  // Chocolate & cocoa
+  ['Cocoa powder (natural)', 'Chocolate', 'g', 1, 'kg', 650, [], 'Cool, dry', 540],
+  ['Dutch-processed cocoa powder', 'Chocolate', 'g', 1, 'kg', 900, [], 'Cool, dry', 540],
+  ['Dark compound chocolate', 'Chocolate', 'g', 1, 'kg', 320, ['Milk', 'Soy'], 'Cool, dry 15–20°C', 365],
+  ['Milk compound chocolate', 'Chocolate', 'g', 1, 'kg', 340, ['Milk', 'Soy'], 'Cool, dry 15–20°C', 365],
+  ['White compound chocolate', 'Chocolate', 'g', 1, 'kg', 350, ['Milk', 'Soy'], 'Cool, dry 15–20°C', 300],
+  ['Dark couverture (55%)', 'Chocolate', 'g', 1, 'kg', 1100, ['Milk', 'Soy'], 'Cool, dry 15–18°C', 365],
+  ['Milk couverture', 'Chocolate', 'g', 1, 'kg', 1200, ['Milk', 'Soy'], 'Cool, dry 15–18°C', 300],
+  ['White couverture', 'Chocolate', 'g', 1, 'kg', 1250, ['Milk', 'Soy'], 'Cool, dry 15–18°C', 270],
+  ['Dark chocolate chips', 'Chocolate', 'g', 1, 'kg', 380, ['Milk', 'Soy'], 'Cool, dry 15–20°C', 365],
+  ['Milk chocolate chips', 'Chocolate', 'g', 1, 'kg', 400, ['Milk', 'Soy'], 'Cool, dry 15–20°C', 300],
+  ['White chocolate chips', 'Chocolate', 'g', 1, 'kg', 420, ['Milk', 'Soy'], 'Cool, dry 15–20°C', 300],
+  // Nuts & seeds
+  ['Almonds', 'Nuts', 'g', 1, 'kg', 950, ['Tree nuts'], 'Cool, sealed', 270],
+  ['Flaked almonds', 'Nuts', 'g', 1, 'kg', 1100, ['Tree nuts'], 'Cool, sealed', 180],
+  ['Cashew nuts', 'Nuts', 'g', 1, 'kg', 1000, ['Tree nuts'], 'Cool, sealed', 270],
+  ['Walnut kernels', 'Nuts', 'g', 1, 'kg', 1300, ['Tree nuts'], 'Chilled or cool, sealed', 180],
+  ['Pistachios (shelled, unsalted)', 'Nuts', 'g', 1, 'kg', 2600, ['Tree nuts'], 'Cool, sealed', 270],
+  ['Hazelnuts', 'Nuts', 'g', 1, 'kg', 1800, ['Tree nuts'], 'Cool, sealed', 270],
+  ['Roasted peanuts', 'Nuts', 'g', 1, 'kg', 180, ['Peanuts'], 'Cool, sealed', 180],
+  ['Peanut butter', 'Nuts', 'g', 1, 'kg', 350, ['Peanuts'], 'Ambient', 270],
+  ['Desiccated coconut', 'Nuts', 'g', 1, 'kg', 280, [], 'Cool, sealed', 180],
+  ['Sesame seeds', 'Seeds', 'g', 1, 'kg', 200, ['Sesame'], 'Cool, sealed', 270],
+  ['Flax seeds', 'Seeds', 'g', 1, 'kg', 180, [], 'Cool, sealed', 270],
+  ['Chia seeds', 'Seeds', 'g', 1, 'kg', 450, [], 'Cool, sealed', 540],
+  ['Pumpkin seeds', 'Seeds', 'g', 1, 'kg', 700, [], 'Cool, sealed', 180],
+  ['Sunflower seeds', 'Seeds', 'g', 1, 'kg', 300, [], 'Cool, sealed', 180],
+  ['Melon seeds (magaz)', 'Seeds', 'g', 1, 'kg', 900, [], 'Cool, sealed', 180],
+  // Fruit & dried fruit
+  ['Black raisins', 'Fruit', 'g', 1, 'kg', 300, ['Sulphites'], 'Cool, sealed', 270],
+  ['Golden raisins (kishmish)', 'Fruit', 'g', 1, 'kg', 350, ['Sulphites'], 'Cool, sealed', 270],
+  ['Tutti frutti', 'Fruit', 'g', 1, 'kg', 160, ['Sulphites'], 'Ambient, sealed', 270],
+  ['Dried cranberries', 'Fruit', 'g', 1, 'kg', 700, [], 'Cool, sealed', 365],
+  ['Dates (seedless)', 'Fruit', 'g', 1, 'kg', 280, [], 'Cool, sealed', 180],
+  ['Dried apricots', 'Fruit', 'g', 1, 'kg', 900, ['Sulphites'], 'Cool, sealed', 270],
+  ['Glacé cherries', 'Fruit', 'g', 1, 'kg', 450, ['Sulphites'], 'Ambient, sealed', 365],
+  ['Candied orange peel', 'Fruit', 'g', 1, 'kg', 400, ['Sulphites'], 'Ambient, sealed', 270],
+  ['Mango pulp', 'Fruit', 'g', 850, 'g', 150, [], 'Ambient; chill after opening', 365],
+  ['Bananas (fresh)', 'Fruit', 'g', 1, 'kg', 60, [], 'Ambient', 5],
+  ['Carrots (fresh)', 'Fruit', 'g', 1, 'kg', 50, [], 'Chilled', 14],
+  ['Lemons (fresh)', 'Fruit', 'pc', 20, 'pc', 120, [], 'Cool', 14, { gpu: 60 }],
+  // Flavourings & extracts
+  ['Vanilla essence', 'Flavouring', 'ml', 500, 'ml', 250, [], 'Ambient, dark', 730],
+  ['Pure vanilla extract', 'Flavouring', 'ml', 100, 'ml', 600, [], 'Ambient, dark', 1095],
+  ['Butterscotch essence', 'Flavouring', 'ml', 500, 'ml', 250, [], 'Ambient, dark', 730],
+  ['Pineapple essence', 'Flavouring', 'ml', 500, 'ml', 250, [], 'Ambient, dark', 730],
+  ['Strawberry essence', 'Flavouring', 'ml', 500, 'ml', 250, [], 'Ambient, dark', 730],
+  ['Almond essence', 'Flavouring', 'ml', 500, 'ml', 280, [], 'Ambient, dark', 730],
+  ['Lemon essence', 'Flavouring', 'ml', 500, 'ml', 250, [], 'Ambient, dark', 730],
+  ['Rose water', 'Flavouring', 'ml', 1, 'l', 120, [], 'Ambient, dark', 365],
+  ['Kewra water', 'Flavouring', 'ml', 1, 'l', 150, [], 'Ambient, dark', 365],
+  ['Instant coffee powder', 'Flavouring', 'g', 200, 'g', 480, [], 'Ambient, sealed', 540],
+  // Spices
+  ['Cinnamon powder', 'Spices', 'g', 1, 'kg', 600, [], 'Ambient, dark, sealed', 365],
+  ['Green cardamom powder', 'Spices', 'g', 1, 'kg', 3000, [], 'Ambient, dark, sealed', 270],
+  ['Nutmeg powder', 'Spices', 'g', 1, 'kg', 1200, [], 'Ambient, dark, sealed', 365],
+  ['Dry ginger powder', 'Spices', 'g', 1, 'kg', 450, [], 'Ambient, dark, sealed', 365],
+  ['Cumin seeds (jeera)', 'Spices', 'g', 1, 'kg', 450, [], 'Ambient, dark, sealed', 365],
+  ['Carom seeds (ajwain)', 'Spices', 'g', 1, 'kg', 300, [], 'Ambient, dark, sealed', 365],
+  ['Kasuri methi (dried fenugreek)', 'Spices', 'g', 500, 'g', 250, [], 'Ambient, dark, sealed', 270],
+  ['Saffron', 'Spices', 'g', 1, 'g', 300, [], 'Cool, dark, airtight', 730],
+  // Leavening & improvers
+  ['Baking powder', 'Leavening', 'g', 1, 'kg', 300, [], 'Ambient, dry', 540],
+  ['Baking soda', 'Leavening', 'g', 1, 'kg', 90, [], 'Ambient, dry', 730],
+  ['Instant dry yeast', 'Leavening', 'g', 500, 'g', 250, [], 'Cool, sealed; chill after opening', 540],
+  ['Baker\u2019s ammonia (ammonium bicarbonate)', 'Leavening', 'g', 1, 'kg', 150, [], 'Cool, airtight', 365],
+  ['Cream of tartar', 'Leavening', 'g', 100, 'g', 120, [], 'Ambient, dry', 730],
+  ['Bread improver', 'Leavening', 'g', 1, 'kg', 350, ['Gluten'], 'Ambient, dry', 365],
+  ['White vinegar', 'Leavening', 'ml', 1, 'l', 60, [], 'Ambient', 730],
+  // Salt
+  ['Table salt', 'Salt', 'g', 1, 'kg', 28, [], 'Ambient, dry', 1095],
+  ['Black salt (kala namak)', 'Salt', 'g', 1, 'kg', 60, [], 'Ambient, dry', 1095],
+  ['Sea salt flakes', 'Salt', 'g', 250, 'g', 450, [], 'Ambient, dry', 1095],
+  // Stabilisers & thickeners
+  ['Cake gel (emulsifier)', 'Stabilisers', 'g', 1, 'kg', 300, [], 'Ambient', 270],
+  ['Custard powder', 'Stabilisers', 'g', 500, 'g', 200, [], 'Ambient, dry', 365],
+  ['Gelatin powder', 'Stabilisers', 'g', 500, 'g', 900, [], 'Ambient, dry', 730],
+  ['Agar agar powder', 'Stabilisers', 'g', 100, 'g', 250, [], 'Ambient, dry', 730],
+  ['Glycerine (food grade)', 'Stabilisers', 'ml', 500, 'ml', 150, [], 'Ambient', 730],
+  ['CMC / tylose powder', 'Stabilisers', 'g', 100, 'g', 250, [], 'Ambient, dry', 730],
+  // Colours & decoration
+  ['Gel food colours (assorted)', 'Colours', 'g', 240, 'g', 850, [], 'Ambient, dark', 730],
+  ['Liquid food colour – red', 'Colours', 'ml', 500, 'ml', 200, [], 'Ambient, dark', 730],
+  ['Rainbow sprinkles', 'Decoration', 'g', 1, 'kg', 300, [], 'Ambient, dry', 365],
+  ['Chocolate vermicelli', 'Decoration', 'g', 1, 'kg', 280, ['Milk', 'Soy'], 'Cool, dry', 365],
+  ['Silver sugar pearls (dragées)', 'Decoration', 'g', 500, 'g', 450, [], 'Ambient, dry', 730],
+  ['Fondant (ready to roll, white)', 'Decoration', 'g', 1, 'kg', 300, [], 'Ambient, airtight', 365],
+  ['Edible gold dust', 'Decoration', 'g', 5, 'g', 300, [], 'Ambient, dry', 1095],
+  // Fillings & spreads
+  ['Hazelnut cocoa spread', 'Fillings', 'g', 1, 'kg', 700, ['Tree nuts', 'Milk', 'Soy'], 'Ambient', 365],
+  ['Caramel sauce', 'Fillings', 'g', 1, 'kg', 450, ['Milk'], 'Ambient; chill after opening', 270],
+  ['Biscoff-style biscuit spread', 'Fillings', 'g', 400, 'g', 400, ['Gluten', 'Soy'], 'Ambient', 365],
+  ['Strawberry crush', 'Fillings', 'g', 1, 'kg', 250, [], 'Ambient; chill after opening', 365],
+  ['Blueberry filling', 'Fillings', 'g', 1, 'kg', 600, [], 'Ambient; chill after opening', 365],
+  ['Mixed fruit jam', 'Fillings', 'g', 1, 'kg', 250, [], 'Ambient; chill after opening', 365],
+  ['Neutral / apricot glaze', 'Fillings', 'g', 1, 'kg', 450, [], 'Ambient; chill after opening', 365],
+  ['Butterscotch praline crunch', 'Fillings', 'g', 1, 'kg', 350, ['Milk', 'Tree nuts'], 'Cool, airtight', 180],
+];
+
+/* [name, type, packSize (pieces), packPrice ₹] */
+const LIB_PACKAGING = [
+  ['Round cookie tin 250 g', 'Tin', 50, 2750], ['Round cookie tin 500 g', 'Tin', 50, 3750], ['Square cookie tin 1 kg', 'Tin', 25, 2750],
+  ['PET cookie jar 500 ml', 'Jar', 100, 1500], ['PET cookie jar 1 litre', 'Jar', 100, 2200],
+  ['Cookie box 6-piece', 'Box', 100, 1400], ['Cookie box 12-piece', 'Box', 100, 2200], ['Stand-up zip pouch (cookies)', 'Bag', 500, 1500], ['Single cookie sleeve (OPP bag)', 'Bag', 1000, 600],
+  ['Cake box 0.5 kg (8×8 in)', 'Box', 100, 1200], ['Cake box 1 kg (10×10 in)', 'Box', 100, 1600], ['Cake box 2 kg (12×12 in)', 'Box', 50, 1250],
+  ['Cake board round 8 in', 'Board', 100, 800], ['Cake board round 10 in', 'Board', 100, 1100], ['Cake board round 12 in', 'Board', 50, 750],
+  ['Birthday candles (pack)', 'Accessory', 50, 750], ['Plastic cake knife', 'Accessory', 500, 500], ['Cake topper “Happy Birthday”', 'Accessory', 100, 1500],
+  ['Cupcake liners (paper cups)', 'Cup / liner', 1000, 350], ['Cupcake box 1-cavity', 'Box', 200, 1400], ['Cupcake box 6-cavity', 'Box', 100, 2200],
+  ['Brownie box 4-piece', 'Box', 100, 1200], ['Butter paper sheets', 'Insert', 500, 450],
+  ['Pastry box single', 'Box', 200, 1200], ['Dessert cup with lid 150 ml', 'Cup / liner', 100, 900], ['Printed bread bag', 'Bag', 1000, 900],
+  ['Paper carry bag small', 'Bag', 100, 900], ['Paper carry bag large', 'Bag', 100, 1400], ['Paper doilies', 'Insert', 250, 300],
+  ['Best-before / batch label roll', 'Label', 1000, 400], ['Wooden spoon / stirrer', 'Accessory', 1000, 600],
+  ['Cling film roll', 'Wrap', 1, 450], ['Aluminium foil roll', 'Wrap', 1, 600], ['Shrink wrap film roll', 'Wrap', 1, 900], ['Parchment baking paper roll', 'Wrap', 1, 550],
+];
+
+const LIB_SUP = { id: 'SUP-LIB', company: 'Local wholesale market', category: 'General', contact: '', email: '', phone: '', website: '', address: '', paymentTerms: 'Cash / as agreed', leadTimeDays: 1, minOrder: 0, deliverySchedule: 'As required', notes: 'Placeholder supplier for indicative library prices. Replace with your real suppliers and quotes.' };
+const normName = (s) => String(s || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+
+ACT['add-library'] = (d) => {
+  if (!can('editMaster')) return toast('Your role cannot edit the master lists.', 'bad');
+  const haveI = new Set(S.ingredients.map((x) => normName(x.name)).concat(S.ingredients.map((x) => String(x.name).toLowerCase())));
+  const haveP = new Set(S.packaging.map((x) => normName(x.name)).concat(S.packaging.map((x) => String(x.name).toLowerCase())));
+  const newI = LIB_INGREDIENTS.filter((r) => !haveI.has(normName(r[0])) && !haveI.has(r[0].toLowerCase()));
+  const newP = LIB_PACKAGING.filter((r) => !haveP.has(normName(r[0])) && !haveP.has(r[0].toLowerCase()));
+  const cats = Array.from(new Set(LIB_INGREDIENTS.map((r) => r[1])));
+  const countBy = (c) => newI.filter((r) => r[1] === c).length;
+  const m = openModal({ title: 'Add standard bakery items', wide: true,
+    body: '<p style="margin-top:0">Adds the ingredients and packaging commonly needed for <b>cookies, tin cookies, cakes, cupcakes, brownies, breads, pastries and desserts</b>. Items you already have (same name) are skipped.</p>' +
+      '<div class="notice" style="margin-bottom:14px"><div>Prices are <b>indicative Indian wholesale prices</b> to get you started, listed under the supplier “Local wholesale market”. Record your real supplier quotes with <b>Record price</b> on each item — costing updates automatically. Opening stock is set to 0.</div></div>' +
+      '<h3 style="margin:0 0 8px">Ingredients — ' + newI.length + ' new</h3><div class="g3" style="gap:6px 16px">' + cats.map((c) => '<label class="row" style="gap:8px"><input type="checkbox" data-cat="' + esc(c) + '"' + (countBy(c) ? ' checked' : ' disabled') + '> ' + esc(c) + ' <span class="faint small">' + countBy(c) + '</span></label>').join('') + '</div>' +
+      '<h3 style="margin:16px 0 8px">Packaging — ' + newP.length + ' new</h3><label class="row" style="gap:8px"><input type="checkbox" id="libpk"' + (newP.length ? ' checked' : ' disabled') + '> Tins, jars, cake boxes and boards, cupcake and brownie boxes, bags, wraps and accessories</label>' +
+      '<details style="margin-top:14px"><summary class="small" style="cursor:pointer">See the full list</summary><div class="small muted" style="margin-top:8px;columns:2;column-gap:24px">' + newI.map((r) => esc(r[0]) + ' <span class="faint">(' + esc(r[1]) + ')</span>').join('<br>') + (newP.length ? '<br><br><b>Packaging</b><br>' + newP.map((r) => esc(r[0])).join('<br>') : '') + '</div></details>',
+    foot: '<button class="btn" data-x>Cancel</button><button class="btn pri" data-ok' + (newI.length + newP.length ? '' : ' disabled') + '>Add selected items</button>' });
+  m.el.querySelector('[data-x]').onclick = () => closeModal(m, true);
+  m.el.querySelector('[data-ok]').onclick = () => {
+    const pick = new Set(Array.from(m.el.querySelectorAll('[data-cat]:checked')).map((x) => x.dataset.cat));
+    const withPk = m.el.querySelector('#libpk') && m.el.querySelector('#libpk').checked;
+    const now = new Date().toISOString(); const by = me().id;
+    if (!S.suppliers.find((s) => s.id === LIB_SUP.id)) put('suppliers', Object.assign({ active: true, createdAt: now }, LIB_SUP));
+    const icats = S.settings.ingredientCategories || (S.settings.ingredientCategories = []);
+    let addedI = 0, addedP = 0;
+    const idOk = (col, id) => !S[col].some((x) => x.id === id);
+    newI.filter((r) => pick.has(r[1])).forEach((r, i) => {
+      const [name, category, baseUnit, packSize, packUnit, price, allergens, storage, shelf, ex] = r;
+      let id; do { id = 'ING-' + Math.random().toString(36).slice(2, 7).toUpperCase(); } while (!idOk('ingredients', id));
+      if (!icats.includes(category)) icats.push(category);
+      const row = { id, name, sku: 'LIB-' + String(LIB_INGREDIENTS.indexOf(r) + 1).padStart(3, '0'), category, baseUnit, supplierId: LIB_SUP.id, preferredSupplierId: LIB_SUP.id, storage, shelfLifeDays: shelf, allergens: allergens.slice(), minStock: null, reorderPoint: null, stock: 0,
+        prices: [{ id: 'PR-' + Math.random().toString(36).slice(2, 10), date: now, supplierId: LIB_SUP.id, packSize, packUnit, price, by, note: 'Indicative library price — replace with your supplier quote' }], active: true, library: true, createdAt: now };
+      if (ex && ex.f) row.isFlour = true; if (ex && ex.gpu) row.gramsPerUnit = ex.gpu;
+      put('ingredients', row); addedI++;
+    });
+    if (withPk) newP.forEach((r) => {
+      const [name, type, packSize, price] = r;
+      let id; do { id = 'PK-' + Math.random().toString(36).slice(2, 7).toUpperCase(); } while (!idOk('packaging', id));
+      put('packaging', { id, sku: 'LIBP-' + String(LIB_PACKAGING.indexOf(r) + 1).padStart(3, '0'), name, type, supplierId: LIB_SUP.id, unit: 'pc', prices: [{ id: 'PP-' + Math.random().toString(36).slice(2, 10), date: now, supplierId: LIB_SUP.id, packSize, packUnit: 'pc', price, by, note: 'Indicative library price' }], moq: packSize, storage: 'Dry store, flat', stock: 0, active: true, library: true, createdAt: now });
+      addedP++;
+    });
+    saveSettings();
+    audit('Ingredient', 'library', 'CREATE', 'Added standard bakery library: ' + addedI + ' ingredients, ' + addedP + ' packaging items', { addedI, addedP });
+    if (S.mode === 'local') saveLocalSoon();
+    closeModal(m, true); toast('Added ' + addedI + ' ingredients and ' + addedP + ' packaging items'); render();
   };
 };
 </script>
