@@ -3180,6 +3180,7 @@ route(/^\/settings(?:\/(\w+))?$/, (m) => {
   else if (sec === 'locations') body = card('Locations', table([{ key: 'id', label: 'Code' }, { key: 'name', label: 'Name' }, { key: 'active', label: 'Status', render: (l) => (l.active ? pill('OK', 'Active') : pill('INACTIVE', 'Inactive')) }], s.locations || [], { compact: true }) + '<p class="small muted" style="margin:10px 0 0">Plans, batches and products carry a location, so more kitchens can be added without restructuring data.</p>', '<button class="btn sm" data-act="set-locs">' + icon('edit') + 'Edit</button>');
   else if (sec === 'data') body = card('Backup', '<p style="margin-top:0">Download everything — products, recipes and all versions, prices, batches, QC, photos and history — as one JSON file.</p><p class="small muted">Last export: ' + (s.backup && s.backup.lastExport ? fwhen(s.backup.lastExport) + ' by ' + esc(userName(s.backup.lastExportBy)) : 'never') + '</p><button class="btn pri" data-act="export-json">' + icon('down') + 'Export all data</button>' + (S.mode === 'local' ? ' <button class="btn" data-act="import-json">Restore from backup…</button>' : '') + '') +
     card('Storage', '<p style="margin:0">' + (S.mode === 'db' ? 'This workspace is <b>shared and live</b>: everyone with access sees changes as they happen.' : 'This copy is saved <b>in this browser only</b>.') + ' ' + fnum(COLS.reduce((n, c) => n + S[c].length, 0)) + ' records, ' + fnum(S.audit.length) + ' history entries.</p>') +
+    card('Clear products and recipes', '<p style="margin-top:0">Start your catalogue from scratch. This permanently deletes <b>all products and all recipe versions</b>, together with everything that depends on them: production plans, batch sheets, QC records, product photos and product documents. Ingredients, suppliers, packaging, users, settings and the audit history are kept.</p><p class="small muted">Download a backup first if you may need any of it again.</p><button class="btn danger" data-act="clear-catalog">Delete all products and recipes…</button>') +
     card('Demo data', '<p style="margin-top:0">Records marked <span class="demo">DEMO</span> are samples. Reloading demo data <b>replaces everything</b> in this workspace for every user.</p><button class="btn danger" data-act="reset-demo">Reload demo data</button>');
   return head('Settings', 'Business rules that drive costing, capacity and quality.', '', [['Settings']]) + '<div class="grid" style="grid-template-columns:200px minmax(0,1fr)"><nav class="card" style="padding:8px;align-self:start" aria-label="Settings sections">' + secs.map((k) => '<a href="#/settings/' + k + '" class="btn ghost" style="width:100%;justify-content:flex-start;' + (k === sec ? 'background:var(--hover);font-weight:600' : '') + '">' + SET_LABEL[k] + '</a>').join('') + '</nav><div>' + body + '</div></div>';
 });
@@ -3285,6 +3286,31 @@ ACT['import-json'] = () => {
     });
   };
   inp.click();
+};
+
+ACT['clear-catalog'] = () => {
+  if (me().role !== 'admin') return toast('Only an owner can delete the catalogue.', 'bad');
+  const pids = new Set(S.products.map((p) => p.id));
+  const counts = { products: S.products.length, recipes: S.recipes.length, plans: S.plans.length, batches: S.batches.length, photos: S.photos.filter((x) => pids.has(x.productId)).length, documents: S.documents.filter((x) => x.entityType === 'product' || x.entityType === 'recipe' || x.entityType === 'batch').length };
+  const m = openModal({ title: 'Delete all products and recipes', narrow: true,
+    body: '<p style="margin-top:0">This will permanently delete:</p><ul style="margin:0 0 12px;padding-left:20px">' + [['products', 'products'], ['recipes', 'recipe versions'], ['plans', 'production plans'], ['batches', 'batch sheets (with their QC records)'], ['photos', 'product photos'], ['documents', 'product, recipe and batch documents']].map(([k, l]) => '<li>' + fnum(counts[k]) + ' ' + l + '</li>').join('') + '</ul><p>Ingredients, suppliers, packaging, users and settings are kept. <b>This cannot be undone</b> except by restoring a backup.</p><div class="row" style="margin-bottom:12px"><button class="btn sm" type="button" data-bk>Download backup first</button></div><label for="ccc">Type <b>DELETE</b> to confirm</label><input class="in" id="ccc" autocomplete="off" style="margin-top:6px">',
+    foot: '<button class="btn" data-x>Cancel</button><button class="btn danger" data-ok disabled>Delete everything listed</button>' });
+  const inp = m.el.querySelector('#ccc'), ok = m.el.querySelector('[data-ok]');
+  inp.oninput = () => { ok.disabled = inp.value.trim().toUpperCase() !== 'DELETE'; };
+  m.el.querySelector('[data-bk]').onclick = () => ACT['export-json']();
+  m.el.querySelector('[data-x]').onclick = () => closeModal(m, true);
+  ok.onclick = () => {
+    S.batches.slice().forEach((x) => drop('batches', x.id));
+    S.plans.slice().forEach((x) => drop('plans', x.id));
+    S.photos.filter((x) => pids.has(x.productId)).forEach((x) => drop('photos', x.id));
+    S.documents.filter((x) => ['product', 'recipe', 'batch'].includes(x.entityType)).forEach((x) => drop('documents', x.id));
+    S.recipes.slice().forEach((x) => drop('recipes', x.id));
+    S.products.slice().forEach((x) => drop('products', x.id));
+    S.dev.filter((x) => x.productId).forEach((x) => { x.productId = null; put('dev', x); });
+    audit('Settings', 'catalogue', 'DELETE', 'Deleted all products and recipes (' + counts.products + ' products, ' + counts.recipes + ' recipe versions, ' + counts.batches + ' batches, ' + counts.plans + ' plans)', { counts });
+    if (S.mode === 'local') saveLocalSoon();
+    closeModal(m, true); toast('All products and recipes deleted'); go('#/products');
+  };
 };
 </script>
 </body></html>
